@@ -330,7 +330,9 @@ func main() {
 
 	//register metrics and set prometheus handler
 	metadata.AddMetricsToPrometheusRegistry()
-	http.Handle(metadata.MetricsPath, promhttp.Handler())
+	http.HandleFunc("GET "+metadata.MetricsPath, func(w http.ResponseWriter, r *http.Request) {
+		promhttp.Handler().ServeHTTP(w, r)
+	})
 
 	log.Info("Starting webhook receiver")
 	http.HandleFunc("GET /healthz", server.healthzGetHandler)
@@ -338,8 +340,8 @@ func main() {
 	http.HandleFunc("GET /alertStore", server.alertStoreGetHandler)
 	http.HandleFunc("GET /alerts", server.alertsGetHandler)
 	http.HandleFunc("POST /alerts", server.alertsPostHandler)
-	http.HandleFunc("GET /ui", uiHandler)
-	http.HandleFunc("GET /ui/jobs", server.jobsUIHandler)
+	http.HandleFunc("GET /", uiHandler)
+	http.HandleFunc("GET /jobs", server.jobsUIHandler)
 	http.HandleFunc("GET /assets/", assetsHandler)
 	http.Handle("GET /swagger/", httpSwagger.Handler(
 		httpSwagger.DeepLinking(true),
@@ -756,7 +758,7 @@ func (server *clientsetStruct) alertStoreGetHandler(w http.ResponseWriter, r *ht
 // @Produce html
 // @Success 200 {string} string "HTML page"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /ui [get]
+// @Router / [get]
 // function which provides the UI to the user
 func uiHandler(w http.ResponseWriter, r *http.Request) {
 	var alerts []alertStoreEntry
@@ -814,7 +816,7 @@ func getAlerts(query string) []alertStoreEntry {
 // @Produce html
 // @Success 200 {string} string "HTML page"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /ui/jobs [get]
+// @Router /jobs [get]
 func (server *clientsetStruct) jobsUIHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentType, "text/html")
 

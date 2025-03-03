@@ -605,7 +605,6 @@ func addJobLabels(jobObject *batchv1.Job) {
 	jobObject.Labels["app"] = "openfero"
 }
 
-// Update the saveAlert method to use the new interface
 func (server *clientsetStruct) saveAlert(a alert, status string) {
 	log.Debug("Saving alert in alert store")
 	// Convert local alert type to alertstore.Alert type

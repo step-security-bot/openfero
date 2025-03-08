@@ -23,6 +23,32 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/": {
+            "get": {
+                "description": "Get the main UI page",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "ui"
+                ],
+                "summary": "Get UI page",
+                "responses": {
+                    "200": {
+                        "description": "HTML page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/alertStore": {
             "get": {
                 "description": "Get the stored alerts with optional filtering",
@@ -167,56 +193,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/readiness": {
-            "get": {
-                "description": "Get the readiness status of the OpenFero service",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Get readiness status",
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/ui": {
-            "get": {
-                "description": "Get the main UI page",
-                "produces": [
-                    "text/html"
-                ],
-                "tags": [
-                    "ui"
-                ],
-                "summary": "Get UI page",
-                "responses": {
-                    "200": {
-                        "description": "HTML page",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/ui/jobs": {
+        "/jobs": {
             "get": {
                 "description": "Get the jobs overview UI page",
                 "produces": [
@@ -232,6 +209,29 @@ const docTemplate = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/readiness": {
+            "get": {
+                "description": "Get the readiness status of the OpenFero service",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Get readiness status",
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     },
                     "500": {
                         "description": "Internal Server Error",

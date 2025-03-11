@@ -22,10 +22,7 @@ jobs:
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
 
-          # A previous release was created using a lightweight tag
-          # git describe by default includes only annotated tags
-          # git describe --tags includes lightweight tags as well
-          DESCRIBE=`git tag -l --sort=-v:refname | grep -v nightly | head -n 1`
+          DESCRIBE=`git tag -l | sed 's/^v//' | sort -V | grep -Ev "(nightly|latest)" | tail -n 1`
           MAJOR_VERSION=`echo $DESCRIBE | awk '{split($0,a,"."); print a[1]}'`
           MINOR_VERSION=`echo $DESCRIBE | awk '{split($0,a,"."); print a[2]}'`
           MINOR_VERSION="$((${MINOR_VERSION} + 1))"

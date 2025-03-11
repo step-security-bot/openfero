@@ -58,7 +58,7 @@ type hookMessage struct {
 	// @Description Key used to group alerts
 	GroupKey string `json:"groupKey"`
 	// @Description Status of the alert group (firing/resolved)
-	Status string `json:"status"`
+	Status string `json:"status" enum:"firing,resolved" example:"firing"`
 	// @Description Name of the receiver that handled the alert
 	Receiver string `json:"receiver"`
 	// @Description Labels common to all alerts in the group
@@ -104,16 +104,26 @@ var alertStore []alertStoreEntry
 const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 func initKubeClient(kubeconfig *string) *kubernetes.Clientset {
+	var config *rest.Config
+	var err error
 
-	//use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	// Try in-cluster config first
+	config, err = rest.InClusterConfig()
 	if err != nil {
-		log.Fatal("Could not read k8s configuration: %s", zap.String("error", err.Error()))
+		log.Debug("In-cluster configuration not available, trying kubeconfig file")
+		// Use kubeconfig file
+		config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
+		if err != nil {
+			log.Fatal("Could not create k8s configuration", zap.String("error", err.Error()))
+		}
+		log.Info("Using kubeconfig file for cluster access")
+	} else {
+		log.Info("Using in-cluster configuration")
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Fatal("Could not create k8s client: %s", zap.String("error", err.Error()))
+		log.Fatal("Could not create k8s client", zap.String("error", err.Error()))
 	}
 
 	return clientset
@@ -320,7 +330,9 @@ func main() {
 
 	//register metrics and set prometheus handler
 	metadata.AddMetricsToPrometheusRegistry()
-	http.Handle(metadata.MetricsPath, promhttp.Handler())
+	http.HandleFunc("GET "+metadata.MetricsPath, func(w http.ResponseWriter, r *http.Request) {
+		promhttp.Handler().ServeHTTP(w, r)
+	})
 
 	log.Info("Starting webhook receiver")
 	http.HandleFunc("GET /healthz", server.healthzGetHandler)
@@ -328,8 +340,8 @@ func main() {
 	http.HandleFunc("GET /alertStore", server.alertStoreGetHandler)
 	http.HandleFunc("GET /alerts", server.alertsGetHandler)
 	http.HandleFunc("POST /alerts", server.alertsPostHandler)
-	http.HandleFunc("GET /ui", uiHandler)
-	http.HandleFunc("GET /ui/jobs", server.jobsUIHandler)
+	http.HandleFunc("GET /", uiHandler)
+	http.HandleFunc("GET /jobs", server.jobsUIHandler)
 	http.HandleFunc("GET /assets/", assetsHandler)
 	http.Handle("GET /swagger/", httpSwagger.Handler(
 		httpSwagger.DeepLinking(true),
@@ -746,7 +758,7 @@ func (server *clientsetStruct) alertStoreGetHandler(w http.ResponseWriter, r *ht
 // @Produce html
 // @Success 200 {string} string "HTML page"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /ui [get]
+// @Router / [get]
 // function which provides the UI to the user
 func uiHandler(w http.ResponseWriter, r *http.Request) {
 	var alerts []alertStoreEntry
@@ -804,7 +816,7 @@ func getAlerts(query string) []alertStoreEntry {
 // @Produce html
 // @Success 200 {string} string "HTML page"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /ui/jobs [get]
+// @Router /jobs [get]
 func (server *clientsetStruct) jobsUIHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentType, "text/html")
 

@@ -294,12 +294,12 @@ func main() {
 	} else {
 		log.Debug("Using in cluster configuration")
 		// Extract the current namespace from the mounted secrets
-		if _, err := os.Stat(defaultNamespaceLocation); os.IsNotExist(err) {
-			log.Fatal("Current kubernetes namespace could not be found", zap.String("error", err.Error()))
+		if _, statErr := os.Stat(defaultNamespaceLocation); os.IsNotExist(statErr) {
+			log.Fatal("Current kubernetes namespace could not be found", zap.String("error", statErr.Error()))
 		}
-		namespaceDat, err := os.ReadFile(defaultNamespaceLocation)
-		if err != nil {
-			log.Fatal("Couldn't read from "+defaultNamespaceLocation, zap.String("error", err.Error()))
+		namespaceDat, readErr := os.ReadFile(defaultNamespaceLocation)
+		if readErr != nil {
+			log.Fatal("Couldn't read from "+defaultNamespaceLocation, zap.String("error", readErr.Error()))
 		}
 		currentNamespace = string(namespaceDat)
 	}

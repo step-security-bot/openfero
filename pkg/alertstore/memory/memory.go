@@ -62,18 +62,27 @@ func (s *MemoryStore) GetAlerts(query string, limit int) ([]alertstore.AlertEntr
 	defer s.mutex.RUnlock()
 
 	if query == "" {
-		// Return all alerts, up to the limit
-		if limit > 0 && limit < len(s.alerts) {
-			return s.alerts[len(s.alerts)-limit:], nil
+		// Return all alerts in reverse chronological order (newest first), up to the limit
+		result := make([]alertstore.AlertEntry, 0, len(s.alerts))
+
+		// Copy the alerts in reverse order
+		for i := len(s.alerts) - 1; i >= 0; i-- {
+			result = append(result, s.alerts[i])
+			if limit > 0 && len(result) >= limit {
+				break
+			}
 		}
-		return s.alerts, nil
+		return result, nil
 	}
 
 	// Filter alerts based on query
 	var results []alertstore.AlertEntry
-	for _, entry := range s.alerts {
-		if alertMatchesQuery(entry, query) {
-			results = append(results, entry)
+	for i := len(s.alerts) - 1; i >= 0; i-- {
+		if alertMatchesQuery(s.alerts[i], query) {
+			results = append(results, s.alerts[i])
+			if limit > 0 && len(results) >= limit {
+				break
+			}
 		}
 	}
 

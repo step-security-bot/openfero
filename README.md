@@ -23,7 +23,7 @@ Access the Swagger UI at `http://openfero-service:8080/swagger/` to interact wit
 
 #### Using the OpenFero UI
 
-The OpenFero UI is available at `http://openfero-service:8080/ui/` and provides:
+The OpenFero UI is available at `http://openfero-service:8080/` and provides:
 
 - Overview of all received alerts and their current status
 - Configuration viewer for operarios definitions

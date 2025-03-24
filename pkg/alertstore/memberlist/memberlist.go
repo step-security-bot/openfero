@@ -17,8 +17,6 @@ import (
 const (
 	// Default cluster name
 	defaultClusterName = "openfero"
-	// Channel buffer size for broadcasts
-	broadcastQueueSize = 1024
 )
 
 // MemberlistStore implements the alertstore.Store interface using memberlist
@@ -47,6 +45,7 @@ type delegate struct {
 // NewMemberlistStore creates a new memberlist-based alert store
 func NewMemberlistStore(clustername string, limit int) *MemberlistStore {
 	if clustername == "" {
+		// Use default without reassigning parameter
 		clustername = defaultClusterName
 	}
 	if limit <= 0 {
@@ -98,8 +97,10 @@ func (s *MemberlistStore) Initialize() error {
 	namespace := os.Getenv("POD_NAMESPACE")
 	if namespace == "" {
 		// Try to get namespace from the mounted service account
-		if data, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
-			namespace = string(data)
+		// Fix shadowing of err variable
+		namespaceData, readErr := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+		if readErr == nil {
+			namespace = string(namespaceData)
 		} else {
 			namespace = "default"
 		}

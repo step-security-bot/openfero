@@ -268,6 +268,13 @@ func main() {
 
 	flag.Parse()
 
+	// configure log FIRST - move this up before alert store initialization
+	if err := initLogger(*logLevel); err != nil {
+		log.Fatal("Could not set log configuration")
+	}
+
+	log.Info("Starting OpenFero", zap.String("version", version), zap.String("commit", commit), zap.String("date", date))
+
 	// Initialize the appropriate alert store based on configuration
 	var store alertstore.Store
 	switch *alertStoreType {
@@ -282,13 +289,6 @@ func main() {
 		log.Fatal("Failed to initialize alert store", zap.String("error", err.Error()))
 	}
 	defer store.Close()
-
-	// configure log
-	if err := initLogger(*logLevel); err != nil {
-		log.Fatal("Could not set log configuration")
-	}
-
-	log.Info("Starting OpenFero", zap.String("version", version), zap.String("commit", commit), zap.String("date", date))
 
 	// Use the in-cluster config to create a kubernetes client
 	clientset := initKubeClient(kubeconfig)

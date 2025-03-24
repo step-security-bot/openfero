@@ -74,6 +74,23 @@ info:
   title: OpenFero API
   version: "1.0"
 paths:
+  /:
+    get:
+      description: Get the main UI page
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: HTML page
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get UI page
+      tags:
+      - ui
   /alertStore:
     get:
       description: Get the stored alerts with optional filtering
@@ -168,39 +185,7 @@ paths:
       summary: Get health status
       tags:
       - health
-  /readiness:
-    get:
-      description: Get the readiness status of the OpenFero service
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get readiness status
-      tags:
-      - health
-  /ui:
-    get:
-      description: Get the main UI page
-      produces:
-      - text/html
-      responses:
-        "200":
-          description: HTML page
-          schema:
-            type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Get UI page
-      tags:
-      - ui
-  /ui/jobs:
+  /jobs:
     get:
       description: Get the jobs overview UI page
       produces:
@@ -217,4 +202,19 @@ paths:
       summary: Get jobs UI page
       tags:
       - ui
+  /readiness:
+    get:
+      description: Get the readiness status of the OpenFero service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get readiness status
+      tags:
+      - health
 swagger: "2.0"

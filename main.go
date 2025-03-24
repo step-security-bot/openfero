@@ -96,6 +96,7 @@ type clientsetStruct struct {
 	configMapStore          cache.Store
 	jobStore                cache.Store
 	alertStore              alertstore.Store
+	labelSelector           *metav1.LabelSelector
 }
 
 type alertStoreEntry struct {
@@ -132,12 +133,15 @@ func initKubeClient(kubeconfig *string) *kubernetes.Clientset {
 	return clientset
 }
 
-func initConfigMapInformer(clientset *kubernetes.Clientset, configmapNamespace string) cache.Store {
+func initConfigMapInformer(clientset *kubernetes.Clientset, configmapNamespace string, labelSelector *metav1.LabelSelector) cache.Store {
 	// Create informer factory
 	configMapfactory := informers.NewSharedInformerFactoryWithOptions(
 		clientset,
 		time.Hour*1,
 		informers.WithNamespace(configmapNamespace),
+		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
+			options.LabelSelector = metav1.FormatLabelSelector(labelSelector)
+		}),
 	)
 
 	// Get ConfigMap informer
@@ -170,14 +174,14 @@ func initConfigMapInformer(clientset *kubernetes.Clientset, configmapNamespace s
 
 }
 
-func initJobInformer(clientset *kubernetes.Clientset, jobDestinationNamespace string, labelSelector metav1.LabelSelector) cache.Store {
+func initJobInformer(clientset *kubernetes.Clientset, jobDestinationNamespace string, labelSelector *metav1.LabelSelector) cache.Store {
 	// Create informer factory
 	jobFactory := informers.NewSharedInformerFactoryWithOptions(
 		clientset,
 		time.Hour*1,
 		informers.WithNamespace(jobDestinationNamespace),
 		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
-			options.LabelSelector = metav1.FormatLabelSelector(&labelSelector)
+			options.LabelSelector = metav1.FormatLabelSelector(labelSelector)
 		}),
 	)
 
@@ -242,7 +246,6 @@ func initLogger(logLevel string) error {
 // @title OpenFero API
 // @version 1.0
 // @description OpenFero is intended as an event-triggered job scheduler for code agnostic recovery jobs.
-// @termsOfService http://swagger.io/terms/
 
 // @contact.name GitHub Issues
 // @contact.url https://github.com/OpenFero/openfero/issues
@@ -265,6 +268,7 @@ func main() {
 	alertStoreSize := flag.Int("alertStoreSize", 10, "size of the alert store")
 	alertStoreType := flag.String("alertStoreType", "memory", "type of alert store (memory, memberlist)")
 	alertStoreClusterName := flag.String("alertStoreClusterName", "openfero", "Cluster name for memberlist alert store")
+	labelSelector := flag.String("labelSelector", "app=openfero", "label selector for OpenFero ConfigMaps in the format key=value")
 
 	flag.Parse()
 
@@ -307,12 +311,12 @@ func main() {
 	} else {
 		log.Debug("Using in cluster configuration")
 		// Extract the current namespace from the mounted secrets
-		if _, err := os.Stat(defaultNamespaceLocation); os.IsNotExist(err) {
-			log.Fatal("Current kubernetes namespace could not be found", zap.String("error", err.Error()))
+		if _, statErr := os.Stat(defaultNamespaceLocation); os.IsNotExist(statErr) {
+			log.Fatal("Current kubernetes namespace could not be found", zap.String("error", statErr.Error()))
 		}
-		namespaceDat, err := os.ReadFile(defaultNamespaceLocation)
-		if err != nil {
-			log.Fatal("Couldn't read from "+defaultNamespaceLocation, zap.String("error", err.Error()))
+		namespaceDat, readErr := os.ReadFile(defaultNamespaceLocation)
+		if readErr != nil {
+			log.Fatal("Couldn't read from "+defaultNamespaceLocation, zap.String("error", readErr.Error()))
 		}
 		currentNamespace = string(namespaceDat)
 	}
@@ -325,17 +329,18 @@ func main() {
 		jobDestinationNamespace = &currentNamespace
 	}
 
-	// Create label selector for openfero ConfigMaps
-	labelSelector := metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			"app": "openfero",
-		},
+	// Parse label selector
+	parsedlabelSelector, err := metav1.ParseToLabelSelector(*labelSelector)
+	if err != nil {
+		log.Fatal("Could not parse label selector", zap.String("error", err.Error()))
 	}
 
+	log.Debug("Using label selector: " + metav1.FormatLabelSelector(parsedlabelSelector))
+
 	// Create informer factory for configmaps
-	configMapInformer := initConfigMapInformer(clientset, *configmapNamespace)
+	configMapInformer := initConfigMapInformer(clientset, *configmapNamespace, parsedlabelSelector)
 	// Create informer factory for jobs
-	jobInformer := initJobInformer(clientset, *jobDestinationNamespace, labelSelector)
+	jobInformer := initJobInformer(clientset, *jobDestinationNamespace, parsedlabelSelector)
 
 	server := &clientsetStruct{
 		clientset:               *clientset,
@@ -344,11 +349,14 @@ func main() {
 		configMapStore:          configMapInformer,
 		jobStore:                jobInformer,
 		alertStore:              store,
+		labelSelector:           parsedlabelSelector,
 	}
 
 	//register metrics and set prometheus handler
 	metadata.AddMetricsToPrometheusRegistry()
-	http.Handle(metadata.MetricsPath, promhttp.Handler())
+	http.HandleFunc("GET "+metadata.MetricsPath, func(w http.ResponseWriter, r *http.Request) {
+		promhttp.Handler().ServeHTTP(w, r)
+	})
 
 	log.Info("Starting webhook receiver")
 	http.HandleFunc("GET /healthz", server.healthzGetHandler)
@@ -356,8 +364,8 @@ func main() {
 	http.HandleFunc("GET /alertStore", server.alertStoreGetHandler)
 	http.HandleFunc("GET /alerts", server.alertsGetHandler)
 	http.HandleFunc("POST /alerts", server.alertsPostHandler)
-	http.HandleFunc("GET /ui", uiHandler)
-	http.HandleFunc("GET /ui/jobs", server.jobsUIHandler)
+	http.HandleFunc("GET /", uiHandler)
+	http.HandleFunc("GET /jobs", server.jobsUIHandler)
 	http.HandleFunc("GET /assets/", assetsHandler)
 	http.Handle("GET /swagger/", httpSwagger.Handler(
 		httpSwagger.DeepLinking(true),
@@ -494,7 +502,7 @@ func (server *clientsetStruct) createResponseJob(alert alert, status string, _ h
 	responsesConfigmap := strings.ToLower("openfero-" + alertname + "-" + status)
 	log.Debug("Try to load configmap " + responsesConfigmap)
 
-	// Get ConfigMap from store instead of API
+	// Get the configmap from the store
 	obj, exists, err := server.configMapStore.GetByKey(server.configmapNamespace + "/" + responsesConfigmap)
 	if err != nil {
 		log.Error("error getting configmap from store: ", zap.String("error", err.Error()))
@@ -543,8 +551,8 @@ func (server *clientsetStruct) createResponseJob(alert alert, status string, _ h
 	}
 
 	// Adding labels to job if they are not already set
-	if !checkJobLabels(jobObject) {
-		addJobLabels(jobObject)
+	if !checkJobLabels(jobObject, server.labelSelector) {
+		addJobLabels(jobObject, server.labelSelector)
 	}
 
 	// Create the job
@@ -596,13 +604,20 @@ func addJobTTL(jobObject *batchv1.Job) {
 	jobObject.Spec.TTLSecondsAfterFinished = &ttl
 }
 
-func checkJobLabels(jobObject *batchv1.Job) bool {
-	return jobObject.Labels != nil
+func checkJobLabels(jobObject *batchv1.Job, labelSelector *metav1.LabelSelector) bool {
+	for key, value := range labelSelector.MatchLabels {
+		if jobObject.Labels[key] != value {
+			return false
+		}
+	}
+	return true
 }
 
-func addJobLabels(jobObject *batchv1.Job) {
+func addJobLabels(jobObject *batchv1.Job, labelSelector *metav1.LabelSelector) {
 	jobObject.Labels = make(map[string]string)
-	jobObject.Labels["app"] = "openfero"
+	for key, value := range labelSelector.MatchLabels {
+		jobObject.Labels[key] = value
+	}
 }
 
 func (server *clientsetStruct) saveAlert(a alert, status string) {
@@ -713,7 +728,7 @@ func verifyPath(path string) (string, error) {
 // @Produce html
 // @Success 200 {string} string "HTML page"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /ui [get]
+// @Router / [get]
 // function which provides the UI to the user
 func uiHandler(w http.ResponseWriter, r *http.Request) {
 	var alerts []alertStoreEntry
@@ -771,7 +786,7 @@ func getAlerts(query string) []alertStoreEntry {
 // @Produce html
 // @Success 200 {string} string "HTML page"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /ui/jobs [get]
+// @Router /jobs [get]
 func (server *clientsetStruct) jobsUIHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(contentType, "text/html")
 

@@ -649,66 +649,6 @@ func (server *clientsetStruct) alertStoreGetHandler(w http.ResponseWriter, r *ht
 	}
 }
 
-// function which filters alerts based on the query
-func filterAlerts(alerts []alertStoreEntry, query string) []alertStoreEntry {
-	var filteredAlerts []alertStoreEntry
-
-	for _, entry := range alerts {
-		if alertMatchesQuery(entry, query) {
-			filteredAlerts = append(filteredAlerts, entry)
-		}
-	}
-	return filteredAlerts
-}
-
-func alertMatchesQuery(entry alertStoreEntry, query string) bool {
-	query = strings.ToLower(query)
-	alertname := strings.ToLower(entry.Alert.Labels["alertname"])
-
-	// Create a channel to receive match results
-	matchChan := make(chan bool, 4)
-
-	// Check alertname concurrently
-	go func() {
-		matchChan <- strings.Contains(alertname, query)
-	}()
-
-	go func() {
-		matchChan <- strings.Contains(entry.Status, query)
-	}()
-
-	// Check labels concurrently
-	go func() {
-		for _, value := range entry.Alert.Labels {
-			if strings.Contains(strings.ToLower(value), query) {
-				matchChan <- true
-				return
-			}
-		}
-		matchChan <- false
-	}()
-
-	// Check annotations concurrently
-	go func() {
-		for _, value := range entry.Alert.Annotations {
-			if strings.Contains(strings.ToLower(value), query) {
-				matchChan <- true
-				return
-			}
-		}
-		matchChan <- false
-	}()
-
-	// Collect results from all goroutines
-	for i := 0; i < 4; i++ {
-		if <-matchChan {
-			return true
-		}
-	}
-
-	return false
-}
-
 // @Summary Serve static assets
 // @Description Serve static assets like CSS and JavaScript files
 // @Tags assets

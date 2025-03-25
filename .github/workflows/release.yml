@@ -32,8 +32,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - run: git tag ${{ github.event.inputs.tag }}
-
       - name: Set up Go
         uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
         with:
@@ -54,9 +52,12 @@ jobs:
         if: ${{ !contains(github.ref, '-nightly') }}
         # find previous tag by filtering out nightly tags and choosing the
         # second to last tag (last one is the current release)
+        # needs to be executed before new release tag is create otherwise the new release tag to be built will be returned
         run: |
           prev_tag=$(git tag -l | sed 's/^v//' | sort -V | grep -Ev "(nightly|latest)" | tail -n 1)
           echo "GORELEASER_PREVIOUS_TAG=$prev_tag" >> $GITHUB_ENV
+
+      - run: git tag ${{ github.event.inputs.tag }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@90a3faa9d0182683851fbfa97ca1a2cb983bfca3 # v6.2.1

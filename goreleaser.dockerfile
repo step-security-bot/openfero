@@ -7,6 +7,7 @@ RUN echo "openfero:x:10001:10001:OpenFero user:/app:/sbin/nologin" >> /etc/passw
 # final stage
 FROM scratch
 
+EXPOSE 8080
 WORKDIR /app
 
 COPY openfero /app/
@@ -15,4 +16,4 @@ COPY --from=build-env /etc/passwd_single /etc/passwd
 COPY --from=build-env /etc/group_single /etc/group
 USER 10001
 
-CMD ["/app/openfero"]
+ENTRYPOINT ["/app/openfero"]

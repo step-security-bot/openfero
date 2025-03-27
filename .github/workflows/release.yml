@@ -108,7 +108,6 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         if: ${{ !contains(github.ref, '-nightly') }}
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Bump chart version to ${{ env.NEW_VERSION }}
           title: Bump chart version to ${{ env.NEW_VERSION }}
           body: |

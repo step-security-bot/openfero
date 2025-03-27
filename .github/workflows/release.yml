@@ -89,33 +89,6 @@ jobs:
           
           helm package charts/* --destination .cr-release-packages
 
-      - name: Push chart to git
-        id: push-chart-2-git
-        if: ${{ !contains(github.ref, '-nightly') }}
-        run: |
-          # Configure git
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          
-          # Update Chart.yaml and set environment variable
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-          sed -i "s/^version: .*/version: $NEW_VERSION/g" charts/openfero/Chart.yaml
-          sed -i "s/^appVersion: .*/appVersion: ${{ github.event.inputs.tag }}/g" charts/openfero/Chart.yaml
-          
-          git add charts/openfero/Chart.yaml
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        if: ${{ !contains(github.ref, '-nightly') }}
-        with:
-          commit-message: Bump chart version to ${{ env.NEW_VERSION }}
-          title: Bump chart version to ${{ env.NEW_VERSION }}
-          body: |
-            Updates the Helm chart version for release ${{ github.event.inputs.tag }}
-          branch: bump-chart-${{ env.NEW_VERSION }}
-          base: ${{ github.ref_name }}
-          delete-branch: true
-
       - name: Push charts to GHCR
         id: push-charts
         if: ${{ !contains(github.ref, '-nightly') }}
@@ -127,3 +100,16 @@ jobs:
              fi
              helm push "${pkg}" "oci://ghcr.io/openfero/openfero/charts"
            done
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        if: ${{ !contains(github.ref, '-nightly') }}
+        with:
+          commit-message: Bump chart version to ${{ env.NEW_VERSION }}
+          title: Bump chart version to ${{ env.NEW_VERSION }}
+          body: |
+            Updates the Helm chart version for release ${{ github.event.inputs.tag }}
+          branch: bump-chart-${{ env.NEW_VERSION }}
+          base: ${{ github.ref_name }}
+          add-paths: charts/openfero/Chart.yaml
+          delete-branch: true

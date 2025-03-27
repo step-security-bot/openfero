@@ -92,30 +92,30 @@ jobs:
       - name: Push chart to git
         id: push-chart-2-git
         if: ${{ !contains(github.ref, '-nightly') }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Configure git
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           
-          # Create new branch
-          NEW_BRANCH="bump-chart-${NEW_VERSION}"
-          git checkout -b $NEW_BRANCH
+          # Update Chart.yaml and set environment variable
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          sed -i "s/^version: .*/version: $NEW_VERSION/g" charts/openfero/Chart.yaml
+          sed -i "s/^appVersion: .*/appVersion: ${{ github.event.inputs.tag }}/g" charts/openfero/Chart.yaml
           
-          # Add and commit changes
           git add charts/openfero/Chart.yaml
-          git commit -m "Bump chart version to $NEW_VERSION"
-          
-          # Push to new branch
-          git push origin $NEW_BRANCH
-          
-          # Create PR
-          gh pr create \
-            --title "Bump chart version to $NEW_VERSION" \
-            --body "Updates the Helm chart version for release ${{ github.ref_name }}" \
-            --base ${{ github.ref_name }} \
-            --head $NEW_BRANCH
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        if: ${{ !contains(github.ref, '-nightly') }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Bump chart version to ${{ env.NEW_VERSION }}
+          title: Bump chart version to ${{ env.NEW_VERSION }}
+          body: |
+            Updates the Helm chart version for release ${{ github.event.inputs.tag }}
+          branch: bump-chart-${{ env.NEW_VERSION }}
+          base: ${{ github.ref_name }}
+          delete-branch: true
 
       - name: Push charts to GHCR
         id: push-charts

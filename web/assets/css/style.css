@@ -4,3 +4,100 @@ section {
   justify-content: center;
   align-items: center;
 }
+
+/* Theme Variables */
+:root {
+  --text-color: #212529;
+  --bg-color: #fff;
+  --card-bg: #f8f9fa;
+  --border-color: #dee2e6;
+  --nav-bg-color: #343a40;
+}
+
+[data-bs-theme="dark"] {
+  --text-color: #e9ecef;
+  --bg-color: #1e2124;
+  /* Brighter than before (was #121212) */
+  --card-bg: #2a2e33;
+  /* Adjusted card background for contrast */
+  --border-color: #495057;
+  --nav-bg-color: #000000;
+  /* Black navbar for dark mode */
+}
+
+/* Apply theme variables */
+body {
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.card {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+/* Navbar styling */
+.navbar.bg-dark {
+  background-color: var(--nav-bg-color) !important;
+}
+
+/* Theme toggle styles */
+[data-bs-theme="light"] .theme-toggle-dark-icon {
+  display: block;
+}
+
+[data-bs-theme="light"] .theme-toggle-light-icon {
+  display: none;
+}
+
+[data-bs-theme="dark"] .theme-toggle-dark-icon {
+  display: none;
+}
+
+[data-bs-theme="dark"] .theme-toggle-light-icon {
+  display: block;
+}
+
+/* Remove the fixed theme toggle button styles as it's now in navbar */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Table styling for dark mode */
+[data-bs-theme="dark"] .table {
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+[data-bs-theme="dark"] .table thead th {
+  border-color: var(--border-color);
+  color: #e9ecef;
+}
+
+[data-bs-theme="dark"] .table td {
+  border-color: var(--border-color);
+}
+
+[data-bs-theme="dark"] .table-striped>tbody>tr:nth-of-type(odd)>* {
+  background-color: rgba(255, 255, 255, 0.03);
+  /* More subtle striping (was 0.05) */
+}
+
+[data-bs-theme="dark"] .table-hover>tbody>tr:hover>* {
+  background-color: rgba(255, 255, 255, 0.04);
+  /* More subtle hover (was 0.075) */
+}
+
+/* Add subtle styling for standard table in dark mode */
+[data-bs-theme="dark"] .table>tbody>tr {
+  border-color: var(--border-color);
+}
+
+[data-bs-theme="dark"] .table>tbody>tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+  /* Very subtle hover effect */
+  color: #fff;
+}

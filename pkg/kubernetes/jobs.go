@@ -21,7 +21,7 @@ func (c *Client) CreateRemediationJob(jobObject *batchv1.Job) error {
 	// Check if job already exists
 	_, exists, err := c.JobStore.GetByKey(c.JobDestinationNamespace + "/" + jobObject.Name)
 	if err != nil {
-		log.Error("error checking job existence: ", zap.String("error", err.Error()))
+		log.Error("Error checking job existence", zap.String("job", jobObject.Name), zap.String("namespace", c.JobDestinationNamespace), zap.Error(err))
 		return err
 	}
 	if exists {
@@ -30,19 +30,19 @@ func (c *Client) CreateRemediationJob(jobObject *batchv1.Job) error {
 
 	// Create job
 	jobsClient := c.Clientset.BatchV1().Jobs(c.JobDestinationNamespace)
-	log.Info("Creating job " + jobObject.Name)
+	log.Info("Creating job", zap.String("job", jobObject.Name), zap.String("namespace", c.JobDestinationNamespace))
 	_, err = jobsClient.Create(context.TODO(), jobObject, metav1.CreateOptions{})
 	if err != nil {
-		log.Error("error creating job: ", zap.String("error", err.Error()))
+		log.Error("Error creating job", zap.String("job", jobObject.Name), zap.String("namespace", c.JobDestinationNamespace), zap.Error(err))
 		return err
 	}
-	log.Info("Job " + jobObject.Name + " created successfully")
+	log.Info("Job created successfully", zap.String("job", jobObject.Name), zap.String("namespace", c.JobDestinationNamespace))
 	return nil
 }
 
 // AddLabelsAsEnvVars adds alert labels as environment variables to the job
 func AddLabelsAsEnvVars(jobObject *batchv1.Job, alert models.Alert) {
-	log.Debug("Adding labels as environment variables")
+	log.Debug("Adding labels as environment variables", zap.String("job", jobObject.Name), zap.Int("labelCount", len(alert.Labels)))
 	for labelkey, labelvalue := range alert.Labels {
 		jobObject.Spec.Template.Spec.Containers[0].Env = append(
 			jobObject.Spec.Template.Spec.Containers[0].Env,
@@ -85,24 +85,31 @@ func GetJobFromConfigMap(configMap *corev1.ConfigMap, alertname string) (*batchv
 	jobDefinition := configMap.Data[alertname]
 
 	if jobDefinition == "" {
+		log.Debug("Job definition not found", zap.String("alertname", alertname), zap.String("configMap", configMap.Name))
 		return nil, fmt.Errorf("could not find a data block with the key %s in the configmap", alertname)
 	}
 
 	// Convert YAML to JSON
 	jsonBytes, err := yaml.YAMLToJSON([]byte(jobDefinition))
 	if err != nil {
+		log.Error("Error converting YAML job definition to JSON", zap.String("alertname", alertname), zap.Error(err))
 		return nil, fmt.Errorf("error while converting YAML job definition to JSON: %v", err)
 	}
 
 	// Unmarshal JSON to Job object
 	jobObject := &batchv1.Job{}
 	if err := json.Unmarshal(jsonBytes, jobObject); err != nil {
+		log.Error("Error unmarshalling job", zap.String("alertname", alertname), zap.Error(err))
 		return nil, fmt.Errorf("error while using unmarshal on received job: %v", err)
 	}
 
 	// Adding randomString to avoid name conflict
 	randomstring := utils.StringWithCharset(5, utils.Charset)
+	originalName := jobObject.Name
 	jobObject.SetName(jobObject.Name + "-" + randomstring)
+	log.Debug("Generated job name with random suffix",
+		zap.String("originalName", originalName),
+		zap.String("generatedName", jobObject.Name))
 
 	return jobObject, nil
 }

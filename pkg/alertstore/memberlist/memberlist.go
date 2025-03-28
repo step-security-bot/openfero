@@ -16,11 +16,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	// Default cluster name
-	defaultClusterName = "openfero"
-)
-
 // MemberlistStore implements the alertstore.Store interface using memberlist
 type MemberlistStore struct {
 	ml         *memberlist.Memberlist
@@ -46,10 +41,6 @@ type delegate struct {
 
 // NewMemberlistStore creates a new memberlist-based alert store
 func NewMemberlistStore(clustername string, limit int) *MemberlistStore {
-	if clustername == "" {
-		// Use default without reassigning parameter
-		clustername = defaultClusterName
-	}
 	if limit <= 0 {
 		limit = 100
 	}

@@ -16,7 +16,7 @@
             </li>
         </ul>
             {{ if .ShowSearch }}
-            <form class="d-flex ms-auto">
+            <form class="d-flex ms-auto me-2">
                 <div class="search-container">
                     <input class="form-control search-input" type="search" id="search" placeholder="Search..."
                         hx-get="/" hx-params="q" hx-vars="q:search.value" hx-trigger="input changed delay:500ms"
@@ -24,6 +24,12 @@
                 </div>
             </form>
             {{ end }}
+            
+            <!-- Theme toggle button -->
+            <button id="themeToggle" class="btn btn-outline-light btn-sm ms-2" aria-label="Toggle theme">
+                <i class="bi bi-moon-fill theme-toggle-dark-icon"></i>
+                <i class="bi bi-sun-fill theme-toggle-light-icon"></i>
+            </button>
         </div>
     </div>
 </nav>

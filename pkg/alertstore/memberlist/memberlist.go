@@ -16,11 +16,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	// Default cluster name
-	defaultClusterName = "openfero"
-)
-
 // MemberlistStore implements the alertstore.Store interface using memberlist
 type MemberlistStore struct {
 	ml         *memberlist.Memberlist

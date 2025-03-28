@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"sort"
+
 	"github.com/OpenFero/openfero/pkg/alertstore"
 	log "github.com/OpenFero/openfero/pkg/logging"
 	"github.com/hashicorp/memberlist"
@@ -334,14 +336,9 @@ func (d *delegate) MergeRemoteState(buf []byte, join bool) {
 	}
 
 	// Sort by timestamp (newest first)
-	// Using simple bubble sort for simplicity
-	for i := 0; i < len(d.store.alerts); i++ {
-		for j := i + 1; j < len(d.store.alerts); j++ {
-			if d.store.alerts[i].Timestamp.Before(d.store.alerts[j].Timestamp) {
-				d.store.alerts[i], d.store.alerts[j] = d.store.alerts[j], d.store.alerts[i]
-			}
-		}
-	}
+	sort.Slice(d.store.alerts, func(i, j int) bool {
+		return d.store.alerts[i].Timestamp.After(d.store.alerts[j].Timestamp)
+	})
 
 	// Trim to limit
 	if len(d.store.alerts) > d.store.limit {

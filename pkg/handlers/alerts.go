@@ -52,14 +52,19 @@ func (s *Server) AlertsPostHandler(w http.ResponseWriter, r *http.Request) {
 	status := utils.SanitizeInput(message.Status)
 	alertcount := len(message.Alerts)
 
-	log.Debug(status + " webhook received with " + string(alertcount) + " alerts")
+	// Use zap's fields for structured logging instead of string concatenation
+	log.Debug("Webhook received",
+		zap.String("status", status),
+		zap.Int("alertCount", alertcount))
 
 	if !services.CheckAlertStatus(status) {
 		log.Warn("Status of alert was neither firing nor resolved, stop creating a response job.")
 		return
 	}
 
-	log.Debug("Creating response job for " + string(alertcount) + " alerts")
+	// Use zap's fields for structured logging
+	log.Debug("Creating response jobs",
+		zap.Int("jobCount", alertcount))
 
 	for _, alert := range message.Alerts {
 		go services.CreateResponseJob(s.KubeClient, s.AlertStore, alert, status)

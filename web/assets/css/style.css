@@ -17,11 +17,11 @@ section {
 [data-bs-theme="dark"] {
   --text-color: #e9ecef;
   --bg-color: #1e2124;
-  /* Brighter than before (was #121212) */
+
   --card-bg: #2a2e33;
-  /* Adjusted card background for contrast */
   --border-color: #495057;
-  --nav-bg-color: #000000;
+
+  --nav-bg-color: #000;
   /* Black navbar for dark mode */
 }
 
@@ -59,7 +59,6 @@ body {
   display: block;
 }
 
-/* Remove the fixed theme toggle button styles as it's now in navbar */
 .theme-toggle {
   display: flex;
   align-items: center;
@@ -82,22 +81,18 @@ body {
 }
 
 [data-bs-theme="dark"] .table-striped>tbody>tr:nth-of-type(odd)>* {
-  background-color: rgba(255, 255, 255, 0.03);
-  /* More subtle striping (was 0.05) */
+  background-color: rgba(255 255 255 / 3%);
 }
 
 [data-bs-theme="dark"] .table-hover>tbody>tr:hover>* {
-  background-color: rgba(255, 255, 255, 0.04);
-  /* More subtle hover (was 0.075) */
+  background-color: rgba(255 255 255 / 4%);
 }
 
-/* Add subtle styling for standard table in dark mode */
 [data-bs-theme="dark"] .table>tbody>tr {
   border-color: var(--border-color);
 }
 
 [data-bs-theme="dark"] .table>tbody>tr:hover {
-  background-color: rgba(255, 255, 255, 0.03);
-  /* Very subtle hover effect */
+  background-color: rgba(255 255 255 / 3%);
   color: #fff;
 }

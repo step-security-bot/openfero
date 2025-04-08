@@ -28,9 +28,10 @@ type MemberlistStore struct {
 
 // alertEntry represents a single alert in the store
 type alertEntry struct {
-	Alert     alertstore.Alert `json:"alert"`
-	Status    string           `json:"status"`
-	Timestamp time.Time        `json:"timestamp"`
+	Alert     alertstore.Alert    `json:"alert"`
+	Status    string              `json:"status"`
+	Timestamp time.Time           `json:"timestamp"`
+	JobInfo   *alertstore.JobInfo `json:"jobInfo,omitempty"`
 }
 
 // delegate is used to handle memberlist events and operations
@@ -137,10 +138,16 @@ func (s *MemberlistStore) Initialize() error {
 
 // SaveAlert adds an alert to the store and broadcasts it to the cluster
 func (s *MemberlistStore) SaveAlert(alert alertstore.Alert, status string) error {
+	return s.SaveAlertWithJobInfo(alert, status, nil)
+}
+
+// SaveAlertWithJobInfo adds an alert with job info to the store and broadcasts it to the cluster
+func (s *MemberlistStore) SaveAlertWithJobInfo(alert alertstore.Alert, status string, jobInfo *alertstore.JobInfo) error {
 	entry := alertEntry{
 		Alert:     alert,
 		Status:    status,
 		Timestamp: time.Now(),
+		JobInfo:   jobInfo,
 	}
 
 	alertName := alert.Labels["alertname"]
@@ -207,6 +214,7 @@ func (s *MemberlistStore) GetAlerts(query string, limit int) ([]alertstore.Alert
 				Alert:     s.alerts[i].Alert,
 				Status:    s.alerts[i].Status,
 				Timestamp: s.alerts[i].Timestamp,
+				JobInfo:   s.alerts[i].JobInfo,
 			})
 		}
 		log.Debug("Returning alerts with no query filter", zap.Int("resultCount", len(result)))
@@ -223,6 +231,7 @@ func (s *MemberlistStore) GetAlerts(query string, limit int) ([]alertstore.Alert
 				Alert:     entry.Alert,
 				Status:    entry.Status,
 				Timestamp: entry.Timestamp,
+				JobInfo:   entry.JobInfo,
 			})
 		}
 		if len(result) >= limit {
@@ -272,6 +281,15 @@ func (s *MemberlistStore) alertMatchesQuery(entry alertEntry, query string) bool
 	// Check annotations
 	for _, v := range entry.Alert.Annotations {
 		if strings.Contains(strings.ToLower(v), query) {
+			return true
+		}
+	}
+
+	// Check job info if present
+	if entry.JobInfo != nil {
+		if strings.Contains(strings.ToLower(entry.JobInfo.ConfigMapName), query) ||
+			strings.Contains(strings.ToLower(entry.JobInfo.JobName), query) ||
+			strings.Contains(strings.ToLower(entry.JobInfo.Image), query) {
 			return true
 		}
 	}

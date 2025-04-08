@@ -45,6 +45,7 @@ type AlertStoreEntry struct {
 	Alert     Alert     `json:"alert"`
 	Status    string    `json:"status"`
 	Timestamp time.Time `json:"timestamp"`
+	JobInfo   *JobInfo  `json:"jobInfo,omitempty"`
 }
 
 // JobInfo contains information about job definitions

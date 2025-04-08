@@ -1,4 +1,4 @@
-linters/.jscpd.json
+.github/linters/.jscpd.json
 charts/
 web/assets/js/htmx.min.js
 web/assets/js/bootstrap.bundle.min.js

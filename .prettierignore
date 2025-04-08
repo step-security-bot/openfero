@@ -1,6 +1,7 @@
 charts/
 web/assets/js/htmx.min.js
-web/assets/js/bootstrap.min.js
+web/assets/js/bootstrap.bundle.min.js
 web/assets/css/bootstrap.min.css
+web/assets/css/bootstrap-icons.css
 pkg/docs/swagger.json
 pkg/docs/swagger.yaml

@@ -184,12 +184,23 @@ func AssetsHandler(w http.ResponseWriter, r *http.Request) {
 	contentType := ""
 	extension := filepath.Ext(r.URL.Path)
 	switch extension {
-	case ".css":
+	case ".css", ".min.css":
 		contentType = "text/css"
-	case ".js":
+	case ".js", ".min.js":
 		contentType = "application/javascript"
+	case ".woff", ".woff2":
+		contentType = "font/woff2"
+	case ".ttf":
+		contentType = "font/ttf"
+	case ".eot":
+		contentType = "application/vnd.ms-fontobject"
+	case ".svg":
+		contentType = "image/svg+xml"
 	}
-	w.Header().Set("Content-Type", contentType)
+
+	if contentType != "" {
+		w.Header().Set("Content-Type", contentType)
+	}
 
 	log.Debug("Asset content type determined",
 		zap.String("path", r.URL.Path),

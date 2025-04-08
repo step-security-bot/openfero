@@ -68,6 +68,25 @@
                             </div>
                         </div>
 
+                        {{ if .JobInfo }}
+                        <hr>
+                        
+                        <div class="mb-4">
+                            <h6 class="card-subtitle mb-3">
+                                <i class="bi bi-gear-fill me-2"></i>Triggered Job
+                            </h6>
+                            <div class="ms-4">
+                                <strong>Job Name:</strong> {{ .JobInfo.JobName }}
+                            </div>
+                            <div class="ms-4">
+                                <strong>ConfigMap:</strong> {{ .JobInfo.ConfigMapName }}
+                            </div>
+                            <div class="ms-4">
+                                <strong>Image:</strong> {{ .JobInfo.Image }}
+                            </div>
+                        </div>
+                        {{ end }}
+                        
                         <hr>
 
                         <div class="mb-4">

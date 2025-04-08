@@ -35,11 +35,26 @@ func SaveAlert(alertStore alertstore.Store, alert models.Alert, status string) {
 	}
 }
 
+// SaveAlertWithJobInfo saves an alert to the alertstore with job information
+func SaveAlertWithJobInfo(alertStore alertstore.Store, alert models.Alert, status string, jobInfo *alertstore.JobInfo) {
+	log.Debug("Saving alert in alert store with job info",
+		zap.String("alertname", alert.Labels["alertname"]),
+		zap.String("status", status),
+		zap.String("jobName", jobInfo.JobName))
+
+	// Convert to alertstore.Alert type
+	storeAlert := alert.ToAlertStoreAlert()
+	err := alertStore.SaveAlertWithJobInfo(storeAlert, status, jobInfo)
+	if err != nil {
+		log.Error("Failed to save alert with job info",
+			zap.String("alertname", alert.Labels["alertname"]),
+			zap.String("status", status),
+			zap.Error(err))
+	}
+}
+
 // CreateResponseJob creates a response job for an alert
 func CreateResponseJob(client *kubernetes.Client, alertStore alertstore.Store, alert models.Alert, status string) {
-	// Save alert first
-	SaveAlert(alertStore, alert, status)
-
 	alertname := utils.SanitizeInput(alert.Labels["alertname"])
 	responsesConfigmap := strings.ToLower("openfero-" + alertname + "-" + status)
 	log.Debug("Loading alert response configmap",
@@ -54,6 +69,8 @@ func CreateResponseJob(client *kubernetes.Client, alertStore alertstore.Store, a
 			zap.String("configmap", responsesConfigmap),
 			zap.String("namespace", client.ConfigmapNamespace),
 			zap.Error(err))
+		// Save alert without job info since we couldn't get the configmap
+		SaveAlert(alertStore, alert, status)
 		return
 	}
 	if !exists {
@@ -61,6 +78,8 @@ func CreateResponseJob(client *kubernetes.Client, alertStore alertstore.Store, a
 			zap.String("configmap", responsesConfigmap),
 			zap.String("namespace", client.ConfigmapNamespace),
 			zap.String("alertname", alertname))
+		// Save alert without job info since the configmap doesn't exist
+		SaveAlert(alertStore, alert, status)
 		return
 	}
 
@@ -73,6 +92,8 @@ func CreateResponseJob(client *kubernetes.Client, alertStore alertstore.Store, a
 			zap.String("configmap", responsesConfigmap),
 			zap.String("alertname", alertname),
 			zap.Error(err))
+		// Save alert without job info since we couldn't get the job
+		SaveAlert(alertStore, alert, status)
 		return
 	}
 
@@ -104,6 +125,8 @@ func CreateResponseJob(client *kubernetes.Client, alertStore alertstore.Store, a
 			zap.String("alertname", alertname),
 			zap.Error(err))
 		metadata.JobsFailedTotal.Inc()
+		// Save alert without job info since job creation failed
+		SaveAlert(alertStore, alert, status)
 		return
 	}
 
@@ -112,4 +135,14 @@ func CreateResponseJob(client *kubernetes.Client, alertStore alertstore.Store, a
 		zap.String("alertname", alertname),
 		zap.String("status", status))
 	metadata.JobsCreatedTotal.Inc()
+
+	// Create job info for the alert
+	jobInfo := &alertstore.JobInfo{
+		ConfigMapName: responsesConfigmap,
+		JobName:       jobObject.Name,
+		Image:         jobObject.Spec.Template.Spec.Containers[0].Image,
+	}
+
+	// Save the alert with job info
+	SaveAlertWithJobInfo(alertStore, alert, status, jobInfo)
 }

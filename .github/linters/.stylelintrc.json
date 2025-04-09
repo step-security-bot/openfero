@@ -10,7 +10,7 @@
     },
     "ignoreFiles": [
         "web/assets/css/bootstrap.min.css",
-        "web/assets/css/bootstrap-icons.css",
+        "web/assets/css/bootstrap-icons.min.css",
         "node_modules/**/*"
     ]
 }

@@ -9,37 +9,6 @@
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="/assets/bootstrap-icons-1.11.3/font/bootstrap-icons.min.css">
     <script src="/assets/js/htmx.min.js"></script>
-    <script>
-        // Function to convert timestamps to local timezone
-        function convertTimestampsToLocalTimezone() {
-            document.querySelectorAll('.server-timestamp').forEach(function(element) {
-                const serverTimestamp = element.getAttribute('data-timestamp');
-                if (serverTimestamp) {
-                    try {
-                        // Parse the timestamp - handle different formats
-                        // For RFC3339 format used by Go
-                        const date = new Date(serverTimestamp.replace(' ', 'T'));
-                        
-                        if (!isNaN(date.getTime())) {
-                            element.textContent = date.toLocaleString();
-                        } else {
-                            console.error("Could not parse date: ", serverTimestamp);
-                            element.textContent = serverTimestamp; // Fall back to original
-                        }
-                    } catch (e) {
-                        console.error("Error parsing date: ", e);
-                        element.textContent = serverTimestamp; // Fall back to original
-                    }
-                }
-            });
-        }
-        
-        // Run converter when DOM is loaded
-        document.addEventListener('DOMContentLoaded', convertTimestampsToLocalTimezone);
-        
-        // Also run after HTMX content is loaded
-        document.addEventListener('htmx:afterSwap', convertTimestampsToLocalTimezone);
-    </script>
 </head>
 
 <body style="padding-top: 70px;">
@@ -67,7 +36,8 @@
                                 <i class="bi bi-info-square-fill me-2"></i>Metadata
                             </h6>
                             <div class="ms-4">
-                                <strong>Timestamp:</strong> <span class="server-timestamp" data-timestamp="{{ .Timestamp }}">{{ .Timestamp }}</span>
+                                <strong>Timestamp:</strong> <span class="server-timestamp"
+                                    data-timestamp="{{ .Timestamp }}">{{ .Timestamp }}</span>
                             </div>
                             <div class="ms-4">
                                 <strong>Status:</strong> {{ $alert.Status }}
@@ -76,7 +46,7 @@
 
                         {{ if .JobInfo }}
                         <hr>
-                        
+
                         <div class="mb-4">
                             <h6 class="card-subtitle mb-3">
                                 <i class="bi bi-gear-fill me-2"></i>Triggered Job
@@ -92,7 +62,7 @@
                             </div>
                         </div>
                         {{ end }}
-                        
+
                         <hr>
 
                         <div class="mb-4">
@@ -136,6 +106,7 @@
     <!-- Theme toggle script -->
     <script src="/assets/js/theme-toggle.js"></script>
     <script src="/assets/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/js/timestamp-converter.js"></script>
 </body>
 
 </html>

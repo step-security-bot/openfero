@@ -37,7 +37,11 @@
                             </h6>
                             <div class="ms-4">
                                 <strong>Timestamp:</strong> <span class="server-timestamp"
-                                    data-timestamp="{{ .Timestamp }}">{{ .Timestamp }}</span>
+                                    data-timestamp="{{ .Timestamp }}" data-bs-toggle="tooltip" 
+                                    title="ISO Format: {{ .Timestamp.Format "2006-01-02T15:04:05.000Z07:00" }}">
+                                    {{ .Timestamp.Format "Jan 02, 2006 15:04:05.000 MST" }}</span>
+                                <i class="bi bi-info-circle-fill text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="{{ .Timestamp }}"></i>
                             </div>
                             <div class="ms-4">
                                 <strong>Status:</strong> {{ $alert.Status }}
@@ -107,6 +111,15 @@
     <script src="/assets/js/theme-toggle.js"></script>
     <script src="/assets/js/bootstrap.bundle.min.js"></script>
     <script src="/assets/js/timestamp-converter.js"></script>
+    <script>
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
 </body>
 
 </html>

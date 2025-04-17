@@ -2,7 +2,7 @@ name: Nightly build
 
 on:
   schedule:
-    - cron:  '0 0 * * *'
+    - cron: '0 0 * * 5'
   workflow_dispatch:
 
 jobs:
@@ -33,18 +33,18 @@ jobs:
       - name: 'Clean up nightly releases'
         uses: dev-drprasad/delete-older-releases@dfbe6be2a006e9475dfcbe5b8d201f1824c2a9fe # v0.3.4
         with:
-          keep_latest: 7
+          keep_latest: 2
           delete_tags: true
           delete_tag_pattern: nightly
           delete_prerelease_only: true
         env:
           GITHUB_TOKEN: ${{ secrets.NIGHTLY_BUILD_GH_TOKEN }}
 
-      - name: 'Delete nightly containers older than a week'
+      - name: 'Delete nightly containers older than 3 weeks'
         uses: snok/container-retention-policy@4f22ef80902ad409ed55a99dc5133cc1250a0d03 # v3.0.0
         with:
           account: OpenFero
           image-names: openfero
           image-tags: '*-nightly*'
-          cut-off: 1w
+          cut-off: 3w
           token: ${{ secrets.NIGHTLY_BUILD_GH_TOKEN }}

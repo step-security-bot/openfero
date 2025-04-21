@@ -50,10 +50,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set GORELEASER_PREVIOUS_TAG in actual release
-        if: ${{ !contains(github.ref, '-nightly') }}
-        # find previous tag by filtering out nightly tags and choosing the
-        # second to last tag (last one is the current release)
-        # needs to be executed before new release tag is create otherwise the new release tag to be built will be returned
         run: |
           prev_tag=$(git tag -l | sed 's/^v//' | sort -V | grep -Ev "(nightly|latest)" | tail -n 1)
           echo "GORELEASER_PREVIOUS_TAG=$prev_tag" >> "$GITHUB_ENV"

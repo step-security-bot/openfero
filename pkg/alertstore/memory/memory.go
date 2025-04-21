@@ -36,10 +36,16 @@ func (s *MemoryStore) Close() error {
 
 // SaveAlert saves an alert to the in-memory store
 func (s *MemoryStore) SaveAlert(alert alertstore.Alert, status string) error {
+	return s.SaveAlertWithJobInfo(alert, status, nil)
+}
+
+// SaveAlertWithJobInfo saves an alert to the in-memory store with job information
+func (s *MemoryStore) SaveAlertWithJobInfo(alert alertstore.Alert, status string, jobInfo *alertstore.JobInfo) error {
 	entry := alertstore.AlertEntry{
 		Alert:     alert,
 		Status:    status,
 		Timestamp: time.Now(),
+		JobInfo:   jobInfo,
 	}
 
 	s.mutex.Lock()
@@ -115,6 +121,15 @@ func alertMatchesQuery(entry alertstore.AlertEntry, query string) bool {
 	// Check annotations
 	for _, value := range entry.Alert.Annotations {
 		if strings.Contains(strings.ToLower(value), query) {
+			return true
+		}
+	}
+
+	// Check job info if present
+	if entry.JobInfo != nil {
+		if strings.Contains(strings.ToLower(entry.JobInfo.ConfigMapName), query) ||
+			strings.Contains(strings.ToLower(entry.JobInfo.JobName), query) ||
+			strings.Contains(strings.ToLower(entry.JobInfo.Image), query) {
 			return true
 		}
 	}

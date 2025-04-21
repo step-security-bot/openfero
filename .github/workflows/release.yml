@@ -64,9 +64,9 @@ jobs:
         id: set-prerelease
         run: |
           if [[ "${{ github.event.inputs.tag }}" =~ .*-nightly.* ]] || [[ "${{ github.ref }}" =~ .*-nightly.* ]]; then
-            echo "PRERELEASE=--prerelease" >> "$GITHUB_ENV"
+            echo "IS_NIGHTLY=true" >> "$GITHUB_ENV"
           else
-            echo "PRERELEASE=" >> "$GITHUB_ENV"
+            echo "IS_NIGHTLY=false" >> "$GITHUB_ENV"
           fi
 
       - name: Run GoReleaser
@@ -74,10 +74,19 @@ jobs:
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean ${{ env.PRERELEASE }}
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.event.inputs.tag }}
+
+      - name: Mark nightly release as pre-release
+        if: ${{ env.IS_NIGHTLY == 'true' }}
+        run: |
+          # Determine release tag
+          RELEASE_TAG="${{ github.event.inputs.tag }}"
+          
+          # Mark the release as pre-release
+          gh release edit "$RELEASE_TAG" --prerelease
 
       - name: Package charts
         id: chart-releaser

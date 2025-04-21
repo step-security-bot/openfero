@@ -56,16 +56,25 @@ jobs:
         # needs to be executed before new release tag is create otherwise the new release tag to be built will be returned
         run: |
           prev_tag=$(git tag -l | sed 's/^v//' | sort -V | grep -Ev "(nightly|latest)" | tail -n 1)
-          echo "GORELEASER_PREVIOUS_TAG=$prev_tag" >> $GITHUB_ENV
+          echo "GORELEASER_PREVIOUS_TAG=$prev_tag" >> "$GITHUB_ENV"
 
       - run: git tag ${{ github.event.inputs.tag }}
+
+      - name: Set pre-release flag for nightly builds
+        id: set-prerelease
+        run: |
+          if [[ "${{ github.event.inputs.tag }}" =~ .*-nightly.* ]] || [[ "${{ github.ref }}" =~ .*-nightly.* ]]; then
+            echo "PRERELEASE=--prerelease" >> "$GITHUB_ENV"
+          else
+            echo "PRERELEASE=" >> "$GITHUB_ENV"
+          fi
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean
+          args: release --clean ${{ env.PRERELEASE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ github.event.inputs.tag }}
@@ -76,12 +85,12 @@ jobs:
         run: |
           # Get current version and calculate new patch version
           CURRENT_VERSION=$(grep '^version:' charts/openfero/Chart.yaml | awk '{print $2}')
-          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
-          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
-          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+          MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+          MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+          PATCH=$(echo "$CURRENT_VERSION" | cut -d. -f3)
           NEW_PATCH=$((PATCH + 1))
           NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_ENV"
           
           # Update both version and appVersion
           sed -i "s/^version: .*/version: $NEW_VERSION/g" charts/openfero/Chart.yaml

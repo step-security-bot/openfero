@@ -27,6 +27,9 @@ jobs:
       contents: write
       packages: write
       pull-requests: write  # Add permission to create pull requests
+    env:
+      NEW_VERSION: "0.0.0"
+      IS_NIGHTLY: false
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -80,7 +83,7 @@ jobs:
         if: ${{ env.IS_NIGHTLY == 'true' }}
         run: |
           # Mark the release as pre-release
-          gh release edit ${{ env.RELEASE_TAG }} --prerelease
+          gh release edit $RELEASE_TAG --prerelease
         env:
           GH_TOKEN: ${{ secrets.NIGHTLY_BUILD_GH_TOKEN }}
           RELEASE_TAG: ${{ github.event.inputs.tag }}

@@ -28,6 +28,7 @@ builds:
 
 release:
   target_commitish: "{{ .Commit }}"
+  prerelease: auto
 
 archives:
   - formats:

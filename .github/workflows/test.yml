@@ -24,10 +24,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: echo Input
-        run: |
-          # Mark the release as pre-release
-          echo $RELEASE_TAG
+      - name: echo Input-1
+        run: echo $RELEASE_TAG
+        env:
+          RELEASE_TAG: ${{ github.event.inputs.tag }}
+
+      - name: echo Input-2
+        run: echo $RELEASE_TAG
         env:
           RELEASE_TAG: ${{ github.event.inputs.tag }}
 

@@ -9,8 +9,8 @@ Open Fero is a little play on words from the Latin "opem fero", which means "to 
 The recommended method is installation via helm chart.
 
 ```bash
-helm pull oci://ghcr.io/openfero/openfero/charts/openfero --version 0.1.0
-helm install openfero oci://ghcr.io/openfero/openfero/charts/openfero --version 0.1.0
+helm pull oci://ghcr.io/openfero/openfero/charts/openfero --version 0.2.1
+helm install openfero oci://ghcr.io/openfero/openfero/charts/openfero --version 0.2.1
 ```
 
 ### Testing the Installation

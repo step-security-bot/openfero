@@ -1,3 +1,17 @@
+// Immediately apply theme before page load to prevent flash
+(function () {
+  const getPreferredTheme = () => {
+    const storedTheme = localStorage.getItem('theme')
+    if (storedTheme) {
+      return storedTheme
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+
+  // Apply theme immediately
+  document.documentElement.setAttribute('data-bs-theme', getPreferredTheme())
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
   // Check for saved theme preference or use OS preference
   const getPreferredTheme = () => {

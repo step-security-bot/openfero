@@ -81,12 +81,9 @@ jobs:
 
       - name: Mark nightly release as pre-release
         if: ${{ env.IS_NIGHTLY == 'true' }}
-        run: |
-          echo "Set release $RELEASE_TAG to pre-release"
-          gh release edit $RELEASE_TAG --prerelease
+        run: gh release edit ${{ github.event.inputs.tag }} --prerelease
         env:
           GH_TOKEN: ${{ secrets.NIGHTLY_BUILD_GH_TOKEN }}
-          RELEASE_TAG: ${{ github.event.inputs.tag }}
 
       - name: Package charts
         id: chart-releaser

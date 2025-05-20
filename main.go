@@ -139,6 +139,9 @@ func main() {
 		AlertStore: store,
 	}
 
+	// Pass build information to handlers
+	handlers.SetBuildInfo(version, commit, date)
+
 	// Register metrics and set prometheus handler
 	metadata.AddMetricsToPrometheusRegistry()
 	http.HandleFunc("GET "+metadata.MetricsPath, func(w http.ResponseWriter, r *http.Request) {
@@ -154,6 +157,7 @@ func main() {
 	http.HandleFunc("POST /alerts", server.AlertsPostHandler)
 	http.HandleFunc("GET /", handlers.UIHandler)
 	http.HandleFunc("GET /jobs", server.JobsUIHandler)
+	http.HandleFunc("GET /about", handlers.AboutHandler)
 	http.HandleFunc("GET /assets/", handlers.AssetsHandler)
 	http.Handle("GET /swagger/", httpSwagger.Handler(
 		httpSwagger.DeepLinking(true),

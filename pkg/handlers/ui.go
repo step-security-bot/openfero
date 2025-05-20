@@ -47,10 +47,16 @@ func UIHandler(w http.ResponseWriter, r *http.Request) {
 		Title      string
 		ShowSearch bool
 		Alerts     []models.AlertStoreEntry
+		Version    string
+		Commit     string
+		BuildDate  string
 	}{
 		Title:      "Alerts",
 		ShowSearch: true,
 		Alerts:     alerts,
+		Version:    buildInformation.Version,
+		Commit:     buildInformation.Commit,
+		BuildDate:  buildInformation.BuildDate,
 	}
 
 	// Execute templates
@@ -160,10 +166,16 @@ func (s *Server) JobsUIHandler(w http.ResponseWriter, r *http.Request) {
 		Title      string
 		ShowSearch bool
 		Jobs       []models.JobInfo
+		Version    string
+		Commit     string
+		BuildDate  string
 	}{
 		Title:      "Jobs",
 		ShowSearch: false,
 		Jobs:       jobInfos,
+		Version:    buildInformation.Version,
+		Commit:     buildInformation.Commit,
+		BuildDate:  buildInformation.BuildDate,
 	}
 
 	if err := tmpl.Execute(w, data); err != nil {

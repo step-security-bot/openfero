@@ -24,7 +24,7 @@
             {{ $uniqueID := printf "alert-%d" $index }}
             <div class="accordion-item shadow-sm mb-3">
                 <h2 class="accordion-header" id="heading{{ $uniqueID }}">
-                    <button class="accordion-button bg-primary text-white" type="button" data-bs-toggle="collapse"
+                    <button class="accordion-button {{ if eq $alert.Status "firing" }}bg-danger{{ else if eq $alert.Status "resolved" }}bg-success{{ else }}bg-primary{{ end }} text-white" type="button" data-bs-toggle="collapse"
                         data-bs-target="#collapse{{ $uniqueID }}" aria-expanded="true"
                         aria-controls="collapse{{ $uniqueID }}">
                         {{ $alertName }}

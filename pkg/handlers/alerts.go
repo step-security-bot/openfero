@@ -68,10 +68,11 @@ func (s *Server) AlertsPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Use zap's fields for structured logging
 	log.Debug("Creating response jobs",
-		zap.Int("jobCount", alertcount))
+		zap.Int("jobCount", alertcount),
+		zap.String("groupKey", message.GroupKey))
 
 	for _, alert := range message.Alerts {
-		go services.CreateResponseJob(s.KubeClient, s.AlertStore, alert, status)
+		go services.CreateResponseJob(s.KubeClient, s.AlertStore, alert, status, message.GroupKey)
 	}
 }
 

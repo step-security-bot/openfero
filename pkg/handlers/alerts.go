@@ -40,7 +40,11 @@ func (s *Server) AlertsGetHandler(w http.ResponseWriter, r *http.Request) {
 // AlertsPostHandler handles POST requests to /alerts
 func (s *Server) AlertsPostHandler(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
-	defer r.Body.Close()
+	defer func() {
+		if err := r.Body.Close(); err != nil {
+			log.Error("Failed to close request body", zap.Error(err))
+		}
+	}()
 
 	message := models.HookMessage{}
 	if err := dec.Decode(&message); err != nil {

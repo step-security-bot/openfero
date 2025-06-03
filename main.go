@@ -92,7 +92,11 @@ func main() {
 	if err := store.Initialize(); err != nil {
 		log.Fatal("Failed to initialize alert store", zap.String("error", err.Error()))
 	}
-	defer store.Close()
+	defer func() {
+		if err := store.Close(); err != nil {
+			log.Error("Failed to close alert store", zap.Error(err))
+		}
+	}()
 
 	// Use the in-cluster config to create a kubernetes client
 	clientset := kubernetes.InitKubeClient(kubeconfig)

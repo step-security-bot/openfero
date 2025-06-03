@@ -113,17 +113,17 @@ func (s *MemberlistStore) Initialize() error {
 	}
 
 	// Form the service DNS name for Kubernetes
-	serviceDns := fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, namespace)
+	serviceDNS := fmt.Sprintf("%s.%s.svc.cluster.local", serviceName, namespace)
 	log.Info("Trying to join memberlist cluster",
-		zap.String("service", serviceDns),
+		zap.String("service", serviceDNS),
 		zap.String("namespace", namespace))
 
 	// Try joining the cluster
-	joinCount, err := s.ml.Join([]string{serviceDns})
+	joinCount, err := s.ml.Join([]string{serviceDNS})
 	if err != nil {
 		log.Warn("Failed to join cluster, creating new cluster",
 			zap.Error(err),
-			zap.String("serviceDNS", serviceDns))
+			zap.String("serviceDNS", serviceDNS))
 		// This is not a fatal error - this node will form its own cluster
 		// that others can join later
 	} else {

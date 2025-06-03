@@ -15,7 +15,10 @@ import (
 func init() {
 	// Initialize logger for tests
 	cfg := zap.NewDevelopmentConfig()
-	log.SetConfig(cfg)
+	err := log.SetConfig(cfg)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // MockJobStore implements cache.Store for testing
@@ -109,7 +112,10 @@ func TestCheckExistingJobByGroupKey(t *testing.T) {
 			Active: 1,
 		},
 	}
-	jobStore.Add(activeJob)
+	err := jobStore.Add(activeJob)
+	if err != nil {
+		t.Fatalf("Failed to add job to mock store: %v", err)
+	}
 
 	exists = checkExistingJobByGroupKey(client, "test-group-key")
 	assert.True(t, exists, "Should return true when active job with same groupKey exists")
@@ -130,7 +136,10 @@ func TestCheckExistingJobByGroupKey(t *testing.T) {
 			Succeeded: 1,
 		},
 	}
-	jobStore.Add(completedJob)
+	err = jobStore.Add(completedJob)
+	if err != nil {
+		t.Fatalf("Failed to add completed job to mock store: %v", err)
+	}
 
 	exists = checkExistingJobByGroupKey(client, testGroupKey2)
 	assert.False(t, exists, "Should return false when job with same groupKey is completed")
@@ -155,7 +164,10 @@ func TestCheckExistingJobByGroupKey(t *testing.T) {
 			Failed: 1,
 		},
 	}
-	jobStore.Add(failedJob)
+	err = jobStore.Add(failedJob)
+	if err != nil {
+		t.Fatalf("Failed to add failed job to mock store: %v", err)
+	}
 
 	exists = checkExistingJobByGroupKey(client, testGroupKey3)
 	assert.False(t, exists, "Should return false when job with same groupKey has failed")

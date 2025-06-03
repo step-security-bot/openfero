@@ -107,7 +107,7 @@ func alertMatchesQuery(entry alertstore.AlertEntry, query string) bool {
 	}
 
 	// Check status
-	if strings.Contains(entry.Status, query) {
+	if strings.Contains(strings.ToLower(entry.Status), query) {
 		return true
 	}
 

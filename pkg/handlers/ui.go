@@ -6,6 +6,7 @@ import (
 	"errors"
 	"html/template"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -74,7 +75,9 @@ func UIHandler(w http.ResponseWriter, r *http.Request) {
 func GetAlerts(query string) []models.AlertStoreEntry {
 	log.Debug("Fetching alerts from alert store", zap.String("query", query))
 
-	resp, err := http.Get("http://localhost:8080/alertStore?q=" + query)
+	// URL-encode the query parameter to handle special characters
+	encodedQuery := url.QueryEscape(query)
+	resp, err := http.Get("http://localhost:8080/alertStore?q=" + encodedQuery)
 	if err != nil {
 		log.Error("Failed to get alerts from alert store", zap.Error(err))
 		return nil

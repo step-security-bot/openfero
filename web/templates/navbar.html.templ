@@ -18,9 +18,9 @@
             {{ if .ShowSearch }}
             <form class="d-flex ms-auto me-2">
                 <div class="search-container">
-                    <input class="form-control search-input" type="search" id="search" placeholder="Search..."
-                        hx-get="/" hx-params="q" hx-vars="q:search.value" hx-trigger="input changed delay:500ms"
-                        hx-select="#alert" hx-target="#alerts" />
+                    <input class="form-control search-input" type="search" id="search" name="q" placeholder="Search..."
+                        hx-get="/" hx-trigger="input changed delay:500ms"
+                        hx-select="#alerts" hx-target="#alerts" />
                 </div>
             </form>
             {{ end }}

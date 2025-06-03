@@ -10,6 +10,7 @@ import (
 	"github.com/OpenFero/openfero/pkg/models"
 	"github.com/OpenFero/openfero/pkg/utils"
 	"go.uber.org/zap"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -53,14 +54,60 @@ func SaveAlertWithJobInfo(alertStore alertstore.Store, alert models.Alert, statu
 	}
 }
 
+// checkExistingJobByGroupKey checks if there's already a running job for the given groupKey
+func checkExistingJobByGroupKey(client *kubernetes.Client, groupKey string) bool {
+	// Hash the groupKey to match what's stored in job labels
+	hashedGroupKey := utils.HashGroupKey(groupKey)
+
+	// Get all jobs from the store
+	jobs := client.JobStore.List()
+
+	for _, obj := range jobs {
+		job := obj.(*batchv1.Job)
+
+		// Check if this job has the same hashed groupKey label
+		if job.Labels != nil {
+			if jobGroupKey, exists := job.Labels["openfero.io/group-key"]; exists && jobGroupKey == hashedGroupKey {
+				// Only consider active jobs (not completed or failed)
+				if job.Status.Active > 0 || (job.Status.Succeeded == 0 && job.Status.Failed == 0) {
+					log.Debug("Found existing job for groupKey",
+						zap.String("originalGroupKey", groupKey),
+						zap.String("hashedGroupKey", hashedGroupKey),
+						zap.String("jobName", job.Name),
+						zap.Int32("active", job.Status.Active),
+						zap.Int32("succeeded", job.Status.Succeeded),
+						zap.Int32("failed", job.Status.Failed))
+					return true
+				}
+			}
+		}
+	}
+
+	return false
+}
+
 // CreateResponseJob creates a response job for an alert
-func CreateResponseJob(client *kubernetes.Client, alertStore alertstore.Store, alert models.Alert, status string) {
+func CreateResponseJob(client *kubernetes.Client, alertStore alertstore.Store, alert models.Alert, status string, groupKey string) {
 	alertname := utils.SanitizeInput(alert.Labels["alertname"])
 	responsesConfigmap := strings.ToLower("openfero-" + alertname + "-" + status)
 	log.Debug("Loading alert response configmap",
 		zap.String("configmap", responsesConfigmap),
 		zap.String("alertname", alertname),
-		zap.String("status", status))
+		zap.String("status", status),
+		zap.String("groupKey", groupKey))
+
+	// Check for existing jobs with the same groupKey to prevent duplicates
+	if groupKey != "" {
+		if hasExistingJob := checkExistingJobByGroupKey(client, groupKey); hasExistingJob {
+			log.Info("Skipping job creation - job already exists for group",
+				zap.String("groupKey", groupKey),
+				zap.String("alertname", alertname),
+				zap.String("status", status))
+			// Save alert without job info since we're skipping job creation due to deduplication
+			SaveAlert(alertStore, alert, status)
+			return
+		}
+	}
 
 	// Get the configmap from the store
 	obj, exists, err := client.ConfigMapStore.GetByKey(client.ConfigmapNamespace + "/" + responsesConfigmap)
@@ -116,6 +163,9 @@ func CreateResponseJob(client *kubernetes.Client, alertStore alertstore.Store, a
 			zap.String("job", jobObject.Name),
 			zap.Any("labelSelector", client.LabelSelector))
 	}
+
+	// Add groupKey label for deduplication
+	kubernetes.AddGroupKeyLabel(jobObject, groupKey)
 
 	// Create the job
 	err = client.CreateRemediationJob(jobObject)

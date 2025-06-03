@@ -80,6 +80,22 @@ func AddJobLabels(jobObject *batchv1.Job, labelSelector *metav1.LabelSelector) {
 	}
 }
 
+// AddGroupKeyLabel adds the groupKey label to the job for deduplication
+func AddGroupKeyLabel(jobObject *batchv1.Job, groupKey string) {
+	if jobObject.Labels == nil {
+		jobObject.Labels = make(map[string]string)
+	}
+	if groupKey != "" {
+		// Hash the groupKey to ensure Kubernetes label compatibility
+		hashedGroupKey := utils.HashGroupKey(groupKey)
+		jobObject.Labels["openfero.io/group-key"] = hashedGroupKey
+		log.Debug("Added hashed groupKey label to job",
+			zap.String("job", jobObject.Name),
+			zap.String("originalGroupKey", groupKey),
+			zap.String("hashedGroupKey", hashedGroupKey))
+	}
+}
+
 // GetJobFromConfigMap extracts a job definition from a ConfigMap
 func GetJobFromConfigMap(configMap *corev1.ConfigMap, alertname string) (*batchv1.Job, error) {
 	jobDefinition := configMap.Data[alertname]

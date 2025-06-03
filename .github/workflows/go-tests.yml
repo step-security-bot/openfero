@@ -32,6 +32,3 @@ jobs:
 
       - name: Run tests with race detection
         run: go test -race -v ./...
-
-      - name: Build
-        run: go build -v ./...

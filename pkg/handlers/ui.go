@@ -82,7 +82,11 @@ func GetAlerts(query string) []models.AlertStoreEntry {
 		log.Error("Failed to get alerts from alert store", zap.Error(err))
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Error("Failed to close response body", zap.Error(err))
+		}
+	}()
 
 	var alerts []models.AlertStoreEntry
 	err = json.NewDecoder(resp.Body).Decode(&alerts)

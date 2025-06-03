@@ -12,8 +12,8 @@ TEST_GROUP_KEY="test-group-123"
 
 # Function to calculate the hash of a groupKey using OpenFero's hash function
 hash_group_key() {
-    local groupKey="$1"
-    go run test-hash-util.go "$groupKey"
+	local groupKey="$1"
+	go run test-hash-util.go "$groupKey"
 }
 
 echo "🧪 Testing OpenFero Deduplication"
@@ -28,27 +28,27 @@ echo
 
 # Check if OpenFero is accessible
 echo "🔍 Checking OpenFero availability..."
-if ! curl -s -f "$OPENFERO_URL/health" > /dev/null 2>&1; then
-    echo "❌ Error: OpenFero is not accessible at $OPENFERO_URL"
-    echo "Make sure OpenFero is running locally"
-    exit 1
+if ! curl -s -f "$OPENFERO_URL/health" >/dev/null 2>&1; then
+	echo "❌ Error: OpenFero is not accessible at $OPENFERO_URL"
+	echo "Make sure OpenFero is running locally"
+	exit 1
 fi
 echo "✅ OpenFero is running locally"
 
 # Check if kubectl works
 echo "🔍 Checking Kubernetes cluster access..."
-if ! kubectl cluster-info > /dev/null 2>&1; then
-    echo "❌ Error: Cannot access Kubernetes cluster"
-    echo "Make sure kubectl is configured properly"
-    exit 1
+if ! kubectl cluster-info >/dev/null 2>&1; then
+	echo "❌ Error: Cannot access Kubernetes cluster"
+	echo "Make sure kubectl is configured properly"
+	exit 1
 fi
 echo "✅ Kubernetes cluster is accessible"
 
 # Test 1: Send first alert
 echo "📤 Sending first alert..."
 curl -s -X POST "$OPENFERO_URL/alerts" \
-  -H "Content-Type: application/json" \
-  -d "{
+	-H "Content-Type: application/json" \
+	-d "{
     \"version\": \"4\",
     \"groupKey\": \"$TEST_GROUP_KEY\",
     \"status\": \"firing\",
@@ -87,8 +87,8 @@ echo "Jobs found: $job_count (expected: 1)"
 # Test 2: Send duplicate alert
 echo "📤 Sending duplicate alert..."
 curl -s -X POST "$OPENFERO_URL/alerts" \
-  -H "Content-Type: application/json" \
-  -d "{
+	-H "Content-Type: application/json" \
+	-d "{
     \"version\": \"4\",
     \"groupKey\": \"$TEST_GROUP_KEY\",
     \"status\": \"firing\",
@@ -127,9 +127,9 @@ echo "Jobs found: $job_count_after (expected: 1)"
 # Results
 echo
 if [ "$job_count_after" -eq 1 ]; then
-    echo "🎉 SUCCESS: Deduplication is working! Only 1 job created from 2 identical alerts"
+	echo "🎉 SUCCESS: Deduplication is working! Only 1 job created from 2 identical alerts"
 else
-    echo "❌ FAILURE: Expected 1 job, found $job_count_after"
+	echo "❌ FAILURE: Expected 1 job, found $job_count_after"
 fi
 
 echo

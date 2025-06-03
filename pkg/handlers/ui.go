@@ -83,8 +83,8 @@ func GetAlerts(query string) []models.AlertStoreEntry {
 		return nil
 	}
 	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Error("Failed to close response body", zap.Error(err))
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			log.Error("Failed to close response body", zap.Error(closeErr))
 		}
 	}()
 
